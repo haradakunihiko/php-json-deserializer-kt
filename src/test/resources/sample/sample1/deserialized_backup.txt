@@ -1,0 +1,42 @@
+{
+  "publicString": "Hello World",
+  "publicInt": 42,
+  "publicFloat": 3.14159,
+  "publicBool": true,
+  "publicNull": null,
+  "publicArray": ["apple", "banana", "cherry"],
+  "protectedString": "Protected Data",
+  "protectedInt": 100,
+  "protectedFloat": 2.71828,
+  "protectedBool": false,
+  "protectedArray": {
+    "name": "John Doe",
+    "age": 30,
+    "skills": ["PHP", "JavaScript", "Python"]
+  },
+  "privateString": "Private Secret",
+  "privateInt": 999,
+  "privateFloat": 1.41421,
+  "privateBool": true,
+  "privateArray": {
+    "config": {
+      "debug": true,
+      "version": "1.0.0",
+      "database": {"host": "localhost", "port": 3306}
+    }
+  },
+  "nestedObject": {
+    "dataType": "nested",
+    "level": 1,
+    "items": {
+      "item1": {"id": 101, "name": "First Item", "active": true},
+      "item2": {"id": 102, "name": "Second Item", "active": false}
+    },
+    "metadata": {
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-06-10T12:00:00Z",
+      "version": "1.2.0"
+    },
+    "internalConfig": {"cache_enabled": true, "timeout": 30, "retry_count": 3}
+  }
+}
