@@ -5,6 +5,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlinx.serialization.json.*
 
 /**
@@ -63,7 +64,7 @@ class PhpToJsonTest : StringSpec() {
 
             "Object conversion - basic object" to mapOf(
                 "phpData" to "O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}",
-                "expectedJson" to "{\"name\":\"John\"}"
+                "expectedJson" to "{\"__classname\":\"Test\",\"name\":\"John\"}"
             ),
 
             "Custom serialization class conversion - C type class" to mapOf(
@@ -93,15 +94,15 @@ class PhpToJsonTest : StringSpec() {
             ),
             "Object with protected property" to mapOf(
                 "phpData" to "O:4:\"Test\":1:{s:7:\"\u0000*\u0000name\";s:4:\"John\";}",
-                "expectedJson" to "{\"name\":\"John\"}"
+                "expectedJson" to "{\"__classname\":\"Test\",\"name\":\"John\"}"
             ),
             "Object with private property of same class" to mapOf(
                 "phpData" to "O:4:\"Test\":1:{s:9:\"\u0000Test\u0000name\";s:4:\"John\";}",
-                "expectedJson" to "{\"name\":\"John\"}"
+                "expectedJson" to "{\"__classname\":\"Test\",\"name\":\"John\"}"
             ),
             "Object with private property of different class" to mapOf(
                 "phpData" to "O:4:\"Test\":1:{s:11:\"\u0000Other\u0000name\";s:4:\"John\";}",
-                "expectedJson" to "{\"Other::name\":\"John\"}"
+                "expectedJson" to "{\"__classname\":\"Test\",\"Other::name\":\"John\"}"
             ),
             "Array with string key" to mapOf(
                 "phpData" to "a:1:{s:3:\"key\";s:5:\"value\";}",
@@ -137,7 +138,7 @@ class PhpToJsonTest : StringSpec() {
             ),
             "Direct Map type test" to mapOf(
                 "phpData" to "O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}",
-                "expectedJson" to "{\"name\":\"John\"}"
+                "expectedJson" to "{\"__classname\":\"Test\",\"name\":\"John\"}"
             ),
 
             "actual object with all property types" to mapOf(
@@ -208,22 +209,25 @@ class PhpToJsonTest : StringSpec() {
             exception.cause shouldBe cause
         }
 
-        // JsonElement conversion tests
-        "convertToJsonElement method" {
-            val jsonElement = PhpToJson.convertToJsonElement("i:123;")
+        // JsonElement conversion tests - using convert and parsing instead
+        "convertToJsonElement method (via convert)" {
+            val result = PhpToJson.convert("i:123;")
+            val jsonElement = Json.parseToJsonElement(result)
             jsonElement shouldBe JsonPrimitive(123)
         }
 
         // Tests for specific type coverage (direct API testing)
         "Direct convertToJson with Long value" {
-            // Test Long type conversion directly through reflection
-            val jsonElement = PhpToJson.convertToJsonElement("i:123;")
+            // Test Long type conversion through convert method
+            val result = PhpToJson.convert("i:123;")
+            val jsonElement = Json.parseToJsonElement(result)
             jsonElement shouldBe JsonPrimitive(123)
         }
 
         "Direct convertToJson with Float value" {
-            // Test Float type conversion directly
-            val jsonElement = PhpToJson.convertToJsonElement("d:1.5;")
+            // Test Float type conversion through convert method
+            val result = PhpToJson.convert("d:1.5;")
+            val jsonElement = Json.parseToJsonElement(result)
             jsonElement shouldBe JsonPrimitive(1.5)
         }
 
@@ -233,16 +237,147 @@ class PhpToJsonTest : StringSpec() {
             val compactJson = PhpToJson.convert(phpData, prettyPrint = false)
             val prettyJson = PhpToJson.convert(phpData, prettyPrint = true)
             
-            // Compact should be single line
-            compactJson shouldBe "{\"name\":\"John\",\"age\":30}"
+            // Compact should be single line with class name
+            compactJson shouldContain "\"__classname\":\"Test\""
+            compactJson shouldContain "\"name\":\"John\""
+            compactJson shouldContain "\"age\":30"
             
             // Pretty should have line breaks and indentation
             prettyJson shouldContain "{\n"
+            prettyJson shouldContain "\"__classname\": \"Test\""
             prettyJson shouldContain "\"name\": \"John\""
             prettyJson shouldContain "\"age\": 30"
             
             // Both should parse to the same JSON structure
             Json.parseToJsonElement(compactJson) shouldBe Json.parseToJsonElement(prettyJson)
+        }
+
+        // ConversionOptions DSL tests
+        "ConversionOptions - include class name with default key" {
+            val phpData = "O:4:\"Test\":2:{s:4:\"name\";s:4:\"John\";s:3:\"age\";i:30;}"
+            
+            val converter = PhpToJson(ConversionOptions {
+                includeClassName = true
+            })
+            
+            val result = converter.convert(phpData)
+            val jsonElement = Json.parseToJsonElement(result)
+            
+            result shouldContain "\"__classname\":\"Test\""
+            result shouldContain "\"name\":\"John\""
+            result shouldContain "\"age\":30"
+            
+            val jsonObject = jsonElement.jsonObject
+            jsonObject["__classname"]?.jsonPrimitive?.content shouldBe "Test"
+            jsonObject["name"]?.jsonPrimitive?.content shouldBe "John"
+            jsonObject["age"]?.jsonPrimitive?.int shouldBe 30
+        }
+
+        "ConversionOptions - include class name with custom key" {
+            val phpData = "O:7:\"MyClass\":1:{s:4:\"prop\";s:5:\"value\";}"
+            
+            val converter = PhpToJson(ConversionOptions {
+                includeClassName = true
+                classNameKey = "@type"
+            })
+            
+            val result = converter.convert(phpData)
+            
+            result shouldContain "\"@type\":\"MyClass\""
+            result shouldContain "\"prop\":\"value\""
+            
+            val jsonElement = Json.parseToJsonElement(result)
+            val jsonObject = jsonElement.jsonObject
+            jsonObject["@type"]?.jsonPrimitive?.content shouldBe "MyClass"
+            jsonObject["prop"]?.jsonPrimitive?.content shouldBe "value"
+        }
+
+        "ConversionOptions - include class name disabled (default behavior)" {
+            val phpData = "O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}"
+            
+            val converter = PhpToJson(ConversionOptions {
+                includeClassName = false
+            })
+            
+            val result = converter.convert(phpData)
+            
+            result shouldBe "{\"name\":\"John\"}"
+            result shouldNotContain "__classname"
+        }
+
+        "ConversionOptions - nested objects with class names" {
+            val phpData = "O:5:\"Outer\":1:{s:5:\"inner\";O:5:\"Inner\":1:{s:4:\"data\";s:4:\"test\";}}"
+            
+            val converter = PhpToJson(ConversionOptions {
+                includeClassName = true
+            })
+            
+            val result = converter.convert(phpData)
+            val jsonElement = Json.parseToJsonElement(result)
+            
+            result shouldContain "\"__classname\":\"Outer\""
+            result shouldContain "\"__classname\":\"Inner\""
+            
+            val outerObject = jsonElement.jsonObject
+            outerObject["__classname"]?.jsonPrimitive?.content shouldBe "Outer"
+            
+            val innerObject = outerObject["inner"]?.jsonObject
+            innerObject!!["__classname"]?.jsonPrimitive?.content shouldBe "Inner"
+            innerObject["data"]?.jsonPrimitive?.content shouldBe "test"
+        }
+
+        "ConversionOptions - pretty print and class name together" {
+            val phpData = "O:4:\"Test\":2:{s:4:\"name\";s:4:\"John\";s:3:\"age\";i:30;}"
+            
+            val converter = PhpToJson(ConversionOptions {
+                includeClassName = true
+            })
+            
+            val result = converter.convert(phpData, prettyPrint = true)
+            
+            result shouldContain "\"__classname\": \"Test\""
+            result shouldContain "\"name\": \"John\""
+            result shouldContain "\"age\": 30"
+            result shouldContain "{\n"
+            
+            val jsonElement = Json.parseToJsonElement(result)
+            val jsonObject = jsonElement.jsonObject
+            jsonObject["__classname"]?.jsonPrimitive?.content shouldBe "Test"
+        }
+
+        "ConversionOptions - empty block uses default values" {
+            val phpData = "O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}"
+            
+            val converter = PhpToJson(ConversionOptions {
+                // Empty block - should use default values (includeClassName = true)
+            })
+            
+            val result = converter.convert(phpData)
+            
+            // Should contain class name (new default behavior)
+            result shouldBe "{\"__classname\":\"Test\",\"name\":\"John\"}"
+            result shouldContain "__classname"
+        }
+
+        "ConversionOptions - complex example with multiple settings" {
+            val phpData = "O:7:\"Product\":2:{s:4:\"name\";s:6:\"Widget\";s:5:\"price\";d:19.99;}"
+            
+            val converter = PhpToJson(ConversionOptions {
+                includeClassName = true
+                classNameKey = "__type__"
+            })
+            
+            val result = converter.convert(phpData, prettyPrint = true)
+            val jsonElement = Json.parseToJsonElement(result)
+            val jsonObject = jsonElement.jsonObject
+            
+            result shouldContain "\"__type__\": \"Product\""
+            result shouldContain "\"name\": \"Widget\""
+            result shouldContain "{\n"
+            
+            jsonObject["__type__"]?.jsonPrimitive?.content shouldBe "Product"
+            jsonObject["name"]?.jsonPrimitive?.content shouldBe "Widget"
+            jsonObject["price"]?.jsonPrimitive?.double shouldBe 19.99
         }
     }
 }

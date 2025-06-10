@@ -1,4 +1,5 @@
 {
+  "__classname": "Original",
   "publicString": "Hello World",
   "publicInt": 42,
   "publicFloat": 3.14159,
@@ -26,6 +27,7 @@
     }
   },
   "nestedObject": {
+    "__classname": "NestedData",
     "dataType": "nested",
     "level": 1,
     "items": {
