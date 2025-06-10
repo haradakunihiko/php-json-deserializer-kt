@@ -78,7 +78,7 @@ object PhpToJson {
                 'a' -> parseAsArray()
                 'O' -> parseAsObject()
                 'C' -> parseAsCustom()
-                'E' -> parseAsString() // enum as string
+                'E' -> parseAsEnum() // enum as string
                 'r' -> parseAsRefValue()
                 'R' -> parseAsRef()
                 'N' -> parseAsNull()
@@ -178,6 +178,16 @@ object PhpToJson {
 
         private fun parseAsNull(): Any? {
             val value = null
+            refStack.add(value)
+            ridx++
+            return value
+        }
+
+        private fun parseAsEnum(): String {
+            // Enum format: E:4:"Test":5:"value";
+            // Read the class name first, then the actual value
+            val className = readString()  // Read enum class name
+            val value = readString()      // Read enum value
             refStack.add(value)
             ridx++
             return value
