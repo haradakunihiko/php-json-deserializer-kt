@@ -1,5 +1,11 @@
 # PHP JSON Deserializer for Kotlin/Java
 
+[![CI](https://github.com/haradakunihiko/php-json-deserializer-kt/workflows/CI/badge.svg)](https://github.com/haradakunihiko/php-json-deserializer-kt/actions)
+[![codecov](https://codecov.io/gh/haradakunihiko/php-json-deserializer-kt/branch/main/graph/badge.svg)](https://codecov.io/gh/haradakunihiko/php-json-deserializer-kt)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.haradakunihiko/php-json-deserializer-kt.svg)](https://search.maven.org/artifact/io.github.haradakunihiko/php-json-deserializer-kt)
+[![GitHub release](https://img.shields.io/github/release/haradakunihiko/php-json-deserializer-kt.svg)](https://github.com/haradakunihiko/php-json-deserializer-kt/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > A Kotlin port of [bd808/php-unserialize-js](https://github.com/bd808/php-unserialize-js)
 
 A Kotlin/Java library for deserializing PHP serialized strings to JSON.
