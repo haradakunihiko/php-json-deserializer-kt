@@ -66,7 +66,7 @@ PhpToJson.convert("a:2:{s:4:\"name\";s:4:\"John\";s:3:\"age\";i:30;}") // "{\"na
 PhpToJson.convert("O:8:\"stdClass\":1:{s:4:\"name\";s:4:\"test\";}") // "{\"name\":\"test\"}"
 
 // Custom serializable classes
-PhpToJson.convert("C:4:\"Test\":13:{\"custom data\"}") // "{\"__PHP_Incomplete_Class_Name\":\"Test\",\"serialized\":\"custom data\"}"
+PhpToJson.convert("C:4:\"Test\":13:{\"custom data\"}") // "{\"__PHP_Incomplete_Class_Name\":\"Test\",\"serialized\":\"\\\"custom data\\\"\"}"
 
 // References
 PhpToJson.convert("a:2:{i:0;s:4:\"test\";i:1;r:2;}") // "[\"test\",\"test\"]"
@@ -79,8 +79,8 @@ PhpToJson.convert("a:2:{i:0;s:4:\"test\";i:1;r:2;}") // "[\"test\",\"test\"]"
 val phpObject = """
     O:4:"User":3:{
         s:4:"name";s:4:"John";
-        s:9:"*email";s:13:"john@test.com";
-        s:8:"Userage";i:30;
+        s:7:"\u0000*\u0000email";s:13:"john@test.com";
+        s:9:"\u0000User\u0000age";i:30;
     }
 """.trimIndent()
 
@@ -100,7 +100,7 @@ println(json) // {"name":"John","email":"john@test.com","age":30}
 | array | `a:2:{...}` | `[...]` or `{...}` | Array or object |
 | object | `O:8:"ClassName":1:{...}` | `{...}` | Object |
 | custom | `C:8:"ClassName":1:{...}` | `{...}` | Custom serializable |
-| enum | `E:4:"Test":1:{}` | `"string"` | Treated as string |
+| enum | `E:4:"Test":5:"value";` | `"value"` | Treated as string |
 | reference | `r:1;` | (referenced value) | Object reference |
 | ref value | `R:1;` | (referenced value) | Value reference |
 
