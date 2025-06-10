@@ -9,12 +9,13 @@ import kotlinx.serialization.encodeToString
  */
 object PhpToJson {
 
+
     /**
      * Convert PHP serialized string to JSON string
      */
-    fun convert(phpSerialized: String): String {
+    fun convert(phpSerialized: String, prettyPrint: Boolean = false): String {
         val jsonElement = convertToJsonElement(phpSerialized)
-        return Json.encodeToString(jsonElement)
+        return Json { this.prettyPrint = prettyPrint }.encodeToString(jsonElement)
     }
 
     /**

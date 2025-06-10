@@ -226,6 +226,24 @@ class PhpToJsonTest : StringSpec() {
             val jsonElement = PhpToJson.convertToJsonElement("d:1.5;")
             jsonElement shouldBe JsonPrimitive(1.5)
         }
+
+        "Pretty print test - simple object" {
+            val phpData = "O:4:\"Test\":2:{s:4:\"name\";s:4:\"John\";s:3:\"age\";i:30;}"
+            
+            val compactJson = PhpToJson.convert(phpData, prettyPrint = false)
+            val prettyJson = PhpToJson.convert(phpData, prettyPrint = true)
+            
+            // Compact should be single line
+            compactJson shouldBe "{\"name\":\"John\",\"age\":30}"
+            
+            // Pretty should have line breaks and indentation
+            prettyJson shouldContain "{\n"
+            prettyJson shouldContain "\"name\": \"John\""
+            prettyJson shouldContain "\"age\": 30"
+            
+            // Both should parse to the same JSON structure
+            Json.parseToJsonElement(compactJson) shouldBe Json.parseToJsonElement(prettyJson)
+        }
     }
 }
 
