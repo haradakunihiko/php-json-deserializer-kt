@@ -1,15 +1,15 @@
+import org.gradle.plugins.signing.SigningExtension
+
 plugins {
     kotlin("jvm") version "1.9.21"
     kotlin("plugin.serialization") version "1.9.21"
     id("org.jetbrains.dokka") version "1.9.10"
     id("jacoco")
-    `maven-publish`
-    signing
-    id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
+    id("com.vanniktech.maven.publish") version "0.28.0"
 }
 
-group = "com.github.haradakunihiko"
-version = "1.0.0-SNAPSHOT"
+group = "io.github.haradakunihiko"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -43,64 +43,60 @@ tasks.jacocoTestReport {
     }
 }
 
-java {
-    withJavadocJar()
-    withSourcesJar()
-}
 
-// Maven Central公開設定
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-            
-            pom {
-                name.set("PHP JSON Deserializer Kotlin")
-                description.set("Kotlin library for deserializing PHP serialized data to JSON (bd808/php-unserialize-js compatible)")
-                url.set("https://github.com/haradakunihiko/php-json-deserializer-kt")
-                
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-                
-                developers {
-                    developer {
-                        id.set("haradakunihiko")
-                        name.set("Kunihiko Harada")
-                        email.set("haradakunihiko@example.com")
-                    }
-                }
-                
-                scm {
-                    connection.set("scm:git:git://github.com/haradakunihiko/php-json-deserializer-kt.git")
-                    developerConnection.set("scm:git:ssh://github.com/haradakunihiko/php-json-deserializer-kt.git")
-                    url.set("https://github.com/haradakunihiko/php-json-deserializer-kt")
-                }
-            }
-        }
+// タスクの依存関係を修正
+afterEvaluate {
+    tasks.named("generateMetadataFileForMavenPublication") {
+        dependsOn("dokkaJavadocJar", "kotlinSourcesJar")
     }
 }
 
-signing {
-    val signingKey: String? by project
-    val signingPassword: String? by project
-    useInMemoryPgpKeys(signingKey, signingPassword)
-    sign(publishing.publications["maven"])
-}
 
-nexusPublishing {
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-            
-            val ossrhUsername: String? by project
-            val ossrhPassword: String? by project
-            username.set(ossrhUsername)
-            password.set(ossrhPassword)
+
+
+// Central Portal設定
+mavenPublishing {
+    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    
+    // 署名設定が利用可能な場合のみ署名を有効化
+    val signingRequired = project.findProperty("signing.required")?.toString()?.toBoolean() ?: true
+    if (signingRequired) {
+        signAllPublications()
+        
+        // 署名の設定
+        configure<SigningExtension> {
+            val signingKey: String? by project
+            val signingPassword: String? by project
+            if (signingKey != null && signingPassword != null) {
+                useInMemoryPgpKeys(signingKey, signingPassword)
+            }
+        }
+    }
+    
+    pom {
+        name.set("PHP JSON Deserializer Kotlin")
+        description.set("Kotlin library for deserializing PHP serialized data to JSON (bd808/php-unserialize-js compatible)")
+        url.set("https://github.com/haradakunihiko/php-json-deserializer-kt")
+        
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+            }
+        }
+        
+        developers {
+            developer {
+                id.set("haradakunihiko")
+                name.set("Kunihiko Harada")
+                email.set("sthsoulful@gmail.com")
+            }
+        }
+        
+        scm {
+            connection.set("scm:git:git://github.com/haradakunihiko/php-json-deserializer-kt.git")
+            developerConnection.set("scm:git:ssh://github.com/haradakunihiko/php-json-deserializer-kt.git")
+            url.set("https://github.com/haradakunihiko/php-json-deserializer-kt")
         }
     }
 }

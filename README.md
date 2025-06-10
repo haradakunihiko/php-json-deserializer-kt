@@ -17,14 +17,14 @@ A Kotlin/Java library for deserializing PHP serialized strings to JSON.
 ### Gradle (Kotlin DSL)
 ```kotlin
 dependencies {
-    implementation("com.github.haradakunihiko:php-json-deserializer-kt:1.0.0")
+    implementation("io.github.haradakunihiko:php-json-deserializer-kt:1.0.0")
 }
 ```
 
 ### Maven
 ```xml
 <dependency>
-    <groupId>com.github.haradakunihiko</groupId>
+    <groupId>io.github.haradakunihiko</groupId>
     <artifactId>php-json-deserializer-kt</artifactId>
     <version>1.0.0</version>
 </dependency>
