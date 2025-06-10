@@ -67,10 +67,10 @@ git push origin "$TAG"
 
 # Create GitHub release
 echo "🎉 Creating GitHub release..."
-gh release create "$TAG" \
-    --title "Release $VERSION" \
-    --notes "Release version $VERSION" \
-    --latest
+# gh release create "$TAG" \
+#     --title "Release $VERSION" \
+#     --notes "Release version $VERSION" \
+#     --latest
 
 echo "✅ Release $VERSION created successfully!"
 echo ""
