@@ -15,8 +15,8 @@ A Kotlin/Java library for deserializing PHP serialized strings to JSON.
 - **Convert PHP serialized strings to JSON**
 - **Complete PHP type support**: Private/protected properties, references, custom classes
 - **High-precision array detection**: Accurately distinguish between numeric index arrays and objects
-- **UTF-8 support**: Handles non-compliant encoding
-- **Simple API**: Convert with just one method
+- **Configurable class name inclusion**: Choose whether to include PHP class names in JSON output
+- **Pretty print support**: Format JSON output with indentation
 
 ## 📦 Installation
 
@@ -43,12 +43,63 @@ dependencies {
 ```kotlin
 import com.github.haradakunihiko.phpserialize.PhpToJson
 
-// Method call
+// Simple conversion
 val json = PhpToJson.convert("i:123;")
 println(json) // "123"
 
-// Get as JsonElement
-val jsonElement = PhpToJson.convertToJsonElement("b:1;")
+// Pretty print
+val prettyJson = PhpToJson.convert("O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}", prettyPrint = true)
+println(prettyJson)
+// {
+//     "__classname": "Test",
+//     "name": "John"
+// }
+```
+
+### Advanced Configuration
+
+The library supports advanced configuration through `ConversionOptions` :
+
+```kotlin
+import com.github.haradakunihiko.phpserialize.PhpToJson
+import com.github.haradakunihiko.phpserialize.ConversionOptions
+
+// Disable class names
+val noClassJson = PhpToJson(ConversionOptions {
+    includeClassName = false
+}).convert("O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}")
+println(noClassJson) // {"name":"John"}
+
+```
+
+### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `includeClassName` | `Boolean` | `true` | Include PHP class names in JSON output |
+| `classNameKey` | `String` | `"__classname"` | Key name for storing class information |
+
+**Examples:**
+
+```kotlin
+// Default behavior (includes class names)
+PhpToJson.convert("O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}")
+// → {"__classname":"Test","name":"John"}
+
+// Disable class names
+val noClassConverter = PhpToJson(ConversionOptions {
+    includeClassName = false
+})
+noClassConverter.convert("O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}")
+// → {"name":"John"}
+
+// Custom class name key
+val customConverter = PhpToJson(ConversionOptions {
+    includeClassName = true
+    classNameKey = "@type"
+})
+customConverter.convert("O:4:\"Test\":1:{s:4:\"name\";s:4:\"John\";}")
+// → {"@type":"Test","name":"John"}
 ```
 
 ### Supported PHP Data Types
@@ -85,8 +136,8 @@ PhpToJson.convert("a:2:{i:0;s:4:\"test\";i:1;r:2;}") // "[\"test\",\"test\"]"
 val phpObject = """
     O:4:"User":3:{
         s:4:"name";s:4:"John";
-        s:7:"\u0000*\u0000email";s:13:"john@test.com";
-        s:9:"\u0000User\u0000age";i:30;
+        s:7:"\0*\0email";s:13:"john@test.com";
+        s:9:"\0User\0age";i:30;
     }
 """.trimIndent()
 
@@ -148,9 +199,16 @@ Supports PHP reference functionality:
 ```
 src/main/kotlin/com/github/haradakunihiko/phpserialize/
 ├── PhpToJson.kt                    # Main conversion class
+├── ConversionOptions.kt            # Configuration options and DSL
 └── exceptions/
     └── PhpSerializeException.kt    # Exception class
 ```
+
+### Key Components
+
+- **PhpToJson**: Main class for PHP to JSON conversion with configurable options
+- **ConversionOptions**: Configuration class with DSL support for customizing conversion behavior
+- **PhpSerializeException**: Custom exception for handling conversion errors
 
 ## 🧪 Testing
 

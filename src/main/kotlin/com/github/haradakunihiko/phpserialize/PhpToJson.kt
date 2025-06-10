@@ -7,8 +7,16 @@ import kotlinx.serialization.encodeToString
 /**
  * Library for converting PHP serialized strings to JSON
  */
-object PhpToJson {
+class PhpToJson(private val options: ConversionOptions = ConversionOptions()) {
 
+    companion object {
+        /**
+         * Convert PHP serialized string to JSON string (static method)
+         */
+        fun convert(phpSerialized: String, prettyPrint: Boolean = false): String {
+            return PhpToJson().convert(phpSerialized, prettyPrint)
+        }
+    }
 
     /**
      * Convert PHP serialized string to JSON string
@@ -21,9 +29,9 @@ object PhpToJson {
     /**
      * Convert PHP serialized string to JsonElement
      */
-    fun convertToJsonElement(phpSerialized: String): JsonElement {
+    private fun convertToJsonElement(phpSerialized: String): JsonElement {
         try {
-            val parser = PhpUnserializeParser(phpSerialized)
+            val parser = PhpUnserializeParser(phpSerialized, options)
             val result = parser.parseNext()
             return convertToJson(result)
         } catch (e: Exception) {
@@ -64,7 +72,7 @@ object PhpToJson {
     /**
      * PHP serialized string parser
      */
-    private class PhpUnserializeParser(private val phpstr: String) {
+    private class PhpUnserializeParser(private val phpstr: String, private val options: ConversionOptions) {
         private var idx = 0
         private val refStack = mutableListOf<Any?>()
         private var ridx = 0
@@ -236,6 +244,11 @@ object PhpToJson {
             val obj = mutableMapOf<String, Any?>()
             val lref = ridx++
             val className = readString()
+            
+            // Add class name if the option is enabled
+            if (options.includeClassName) {
+                obj[options.classNameKey] = className
+            }
             
             refStack.add(obj)
             val len = readLength()
