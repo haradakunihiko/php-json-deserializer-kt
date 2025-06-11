@@ -33,7 +33,7 @@ This script will:
 - Create and push a version tag (e.g., `v1.2.1`)
 - Trigger the GitHub Actions workflow
 
-### 3. Automated GitHub Actions Workflow
+### 3. Automated PR Creation
 
 Once the tag is pushed, GitHub Actions automatically:
 
@@ -41,9 +41,22 @@ Once the tag is pushed, GitHub Actions automatically:
 2. **Updates version** in `build.gradle.kts`
 3. **Runs tests** to ensure quality
 4. **Creates a Pull Request** with the version update
-5. **Auto-merges the PR** (squash merge)
-6. **Creates a GitHub Release** with auto-generated release notes
-7. **Publishes to Maven Central**
+
+### 4. Manual Review and Merge
+
+After the automated PR is created:
+
+1. **Review the PR** - Check the version update and any other changes
+2. **Verify CI checks pass** - Ensure all tests and quality checks succeed
+3. **Manually merge the PR** - Use GitHub's web interface to merge when ready
+
+### 5. Automated Publishing
+
+Once the PR is merged, GitHub Actions automatically:
+
+1. **Creates a GitHub Release** with auto-generated release notes
+2. **Publishes to Maven Central**
+3. **Cleans up the release branch**
 
 ## Required Secrets Configuration
 
@@ -104,9 +117,10 @@ After running the release script:
 - Verify all secrets are correctly configured
 - Check that the GPG key is valid and not expired
 
-**PR auto-merge fails:**
-- Check if branch protection rules require reviews
-- Ensure the workflow has sufficient permissions
+**PR cannot be merged:**
+- Check if all CI checks have passed
+- Verify there are no merge conflicts
+- Ensure branch protection rules are satisfied
 
 ### Manual Recovery
 
