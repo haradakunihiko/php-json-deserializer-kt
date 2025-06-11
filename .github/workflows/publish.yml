@@ -65,7 +65,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: |
           echo "Publishing to Maven Central..."
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
+          ./gradlew publishAllPublicationsToMavenCentralRepository
           echo "✅ Published to Maven Central successfully"
           
       - name: Publish Summary
