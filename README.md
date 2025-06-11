@@ -225,6 +225,10 @@ Main test cases:
 - UTF-8 string processing tests
 - Real sample data tests
 
+## 🚀 Release Process
+
+For information about creating releases, see [RELEASE_PROCESS.md](RELEASE_PROCESS.md).
+
 ## 🤝 Contributing
 
 1. Fork this repository

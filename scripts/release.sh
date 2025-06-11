@@ -1,8 +1,11 @@
 #!/bin/bash
 
-# GitHub Release Script
+# GitHub Release Script (Minimal version)
 # Usage: ./scripts/release.sh <version>
 # Example: ./scripts/release.sh 1.0.1
+#
+# This script only creates and pushes a tag.
+# The actual release process is handled by GitHub Actions.
 
 set -e
 
@@ -43,38 +46,22 @@ if git tag -l | grep -q "^$TAG$"; then
     exit 1
 fi
 
-# Update version in build.gradle.kts
-echo "📝 Updating version in build.gradle.kts..."
-sed -i.bak "s/version = \".*\"/version = \"$VERSION\"/" build.gradle.kts
-rm build.gradle.kts.bak
-
-# Run tests to make sure everything works
+# Run tests to make sure everything works before tagging
 echo "🧪 Running tests..."
 ./gradlew test
 
-# Commit version change
-echo "💾 Committing version change..."
-git add build.gradle.kts
-git commit -m "Release version $VERSION"
-
-# Create and push tag
+# Create and push tag (this will trigger GitHub Actions)
 echo "🏷️  Creating tag $TAG..."
 git tag -a "$TAG" -m "Release version $VERSION"
 
-echo "📤 Pushing changes and tag to GitHub..."
-git push origin main
+echo "📤 Pushing tag to GitHub..."
 git push origin "$TAG"
 
-# Create GitHub release
-echo "🎉 Creating GitHub release..."
-# gh release create "$TAG" \
-#     --title "Release $VERSION" \
-#     --notes "Release version $VERSION" \
-#     --latest
-
-echo "✅ Release $VERSION created successfully!"
+echo "✅ Tag $TAG pushed successfully!"
 echo ""
-echo "📋 Next steps:"
-echo "1. Check GitHub Actions for the release workflow"
-echo "2. Verify the release on GitHub: https://github.com/$(git remote get-url origin | sed 's/.*github.com[:/]\([^.]*\).*/\1/')/releases"
-echo "3. Monitor Maven Central for the published artifact"
+echo "📋 The release process will continue automatically via GitHub Actions:"
+echo "1. Version will be updated in build.gradle.kts via PR"
+echo "2. GitHub release will be created with auto-generated notes"
+echo "3. Artifact will be published to Maven Central"
+echo ""
+echo "🔗 Monitor progress at: https://github.com/$(git remote get-url origin | sed 's/.*github.com[:/]\([^.]*\).*/\1/')/actions"
