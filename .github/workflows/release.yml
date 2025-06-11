@@ -43,8 +43,7 @@ jobs:
           
       - name: Update version in build.gradle.kts
         run: |
-          sed -i.bak "s/version = \".*\"/version = \"${{ steps.version.outputs.version }}\"/" build.gradle.kts
-          rm build.gradle.kts.bak
+          sed -i "s/version = \".*\"/version = \"${{ steps.version.outputs.version }}\"/" build.gradle.kts
           
       - name: Run tests
         run: ./gradlew test
@@ -73,7 +72,41 @@ jobs:
           gh pr merge $PR_NUMBER --auto --squash
           
       - name: Wait for PR merge
-        run: sleep 60
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:release/${{ steps.version.outputs.tag }}`
+            }).then(res => res.data[0]?.number);
+            
+            if (!prNumber) throw new Error('PR not found');
+            
+            const maxAttempts = 30;
+            const delay = 10000; // 10 seconds
+            
+            for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+              const { data: pr } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber
+              });
+              
+              if (pr.merged) {
+                console.log(`PR #${prNumber} merged successfully!`);
+                return;
+              }
+              
+              if (pr.state === 'closed') {
+                throw new Error(`PR #${prNumber} was closed without merging`);
+              }
+              
+              console.log(`Attempt ${attempt}/${maxAttempts}: PR #${prNumber} status: ${pr.mergeable_state || pr.state}`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            
+            throw new Error(`Timeout: PR #${prNumber} was not merged within ${maxAttempts * delay / 1000} seconds`);
         
       - name: Update local main branch
         run: |
