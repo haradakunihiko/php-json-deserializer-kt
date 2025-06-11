@@ -1,27 +1,37 @@
-@Grab('io.github.haradakunihiko:php-json-deserializer-kt:1.0.0')
+@Grab('io.github.haradakunihiko:php-json-deserializer-kt:1.3.0')
 import io.github.haradakunihiko.php_json_deserializer.PhpToJson
 
 println "PhpToJson library test with prettyPrint:"
 println "========================================"
 
-// テスト用のオブジェクトデータ
-def complexObject = 'O:4:"Test":3:{s:4:"name";s:4:"John";s:3:"age";i:30;s:7:"address";a:3:{s:4:"city";s:5:"Tokyo";s:7:"country";s:5:"Japan";s:8:"zipcode";s:7:"100-001";}}'
+// テスト用のシンプルなデータ
+def simpleString = 's:5:"Hello";'
+def simpleInt = 'i:42;'
+def simpleArray = 'a:2:{i:0;s:3:"foo";i:1;s:3:"bar";}'
+def simpleObject = 'O:4:"Test":2:{s:4:"name";s:4:"John";s:3:"age";i:30;}'
 
-println "Complex Object Test:"
-println "PHP serialized:"
-println complexObject
+def converter = new PhpToJson()
+
+println "Simple String Test:"
+println "PHP serialized: ${simpleString}"
+println "JSON: ${converter.convert(simpleString, false)}"
 println ""
 
-println "Compact JSON:"
-println PhpToJson.INSTANCE.convert(complexObject)
+println "Simple Integer Test:"
+println "PHP serialized: ${simpleInt}"
+println "JSON: ${converter.convert(simpleInt, false)}"
 println ""
 
-println "Pretty-printed JSON (with parameter):"
-println PhpToJson.INSTANCE.convert(complexObject, true)
+println "Simple Array Test:"
+println "PHP serialized: ${simpleArray}"
+println "JSON (compact): ${converter.convert(simpleArray, false)}"
+println "JSON (pretty): ${converter.convert(simpleArray, true)}"
 println ""
 
-println "Pretty-printed JSON (with convenience method):"
-println PhpToJson.INSTANCE.convertPretty(complexObject)
+println "Simple Object Test:"
+println "PHP serialized: ${simpleObject}"
+println "JSON (compact): ${converter.convert(simpleObject, false)}"
+println "JSON (pretty): ${converter.convert(simpleObject, true)}"
 println ""
 
 println "Test completed successfully!"
