@@ -56,8 +56,8 @@ jobs:
           VERSION="${{ inputs.version }}"
           BRANCH_NAME="release/v$VERSION"
           
-          git config user.name "GitHub Action"
-          git config user.email "action@github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
           echo "Creating release branch: $BRANCH_NAME"
           git checkout -b "$BRANCH_NAME"
@@ -94,29 +94,6 @@ jobs:
           git push origin "$BRANCH_NAME"
           echo "✅ Release branch pushed to origin"
           
-      - name: Debug - Check Authentication
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.PAT_TOKEN }}
-          script: |
-            try {
-              const { data: user } = await github.rest.users.getAuthenticated();
-              console.log('🔍 Authentication Info:');
-              console.log('- User:', user.login);
-              console.log('- User Type:', user.type);
-              console.log('- User ID:', user.id);
-              
-              // Check if this is the repo owner
-              const { data: repo } = await github.rest.repos.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo
-              });
-              console.log('- Repo Owner:', repo.owner.login);
-              console.log('- Is Owner?', user.login === repo.owner.login);
-            } catch (error) {
-              console.log('❌ Authentication failed:', error.message);
-            }
-
       - name: Create Pull Request
         uses: actions/github-script@v7
         id: create_pr
