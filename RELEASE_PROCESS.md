@@ -58,13 +58,25 @@ After the release draft is created:
 2. **Edit release notes** if needed (optional)
 3. **Publish the release** manually when ready
 
-### 6. Automated Maven Central Publishing
+### 6. Automated Maven Central Upload
 
 Once the GitHub Release is published, the "Publish to Maven Central" workflow automatically:
 
 1. **Runs tests** to ensure quality
-2. **Publishes to Maven Central**
-3. **Provides completion summary**
+2. **Uploads artifact to Maven Central Portal** (creates deployment)
+3. **Provides next steps instructions**
+
+### 7. Manual Maven Central Publishing
+
+After the GitHub Actions workflow completes, **manual action is required**:
+
+1. **Go to [Maven Central Portal](https://central.sonatype.com/)**
+2. **Log in** with your Maven Central credentials
+3. **Navigate to "Publish"** in the navigation menu
+4. **Find your deployment** (Status: "VALIDATED")
+5. **Click "Publish"** button
+
+> **⚠️ Important**: The release is not complete until you manually publish the deployment in Maven Central Portal.
 
 ## Required Secrets Configuration
 

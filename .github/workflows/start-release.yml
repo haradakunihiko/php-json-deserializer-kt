@@ -113,10 +113,12 @@ jobs:
               '1. ✅ Review the version change',
               '2. ✅ Ensure all CI checks pass',
               '3. ✅ Merge this PR when ready',
-              '4. 🤖 Tag, GitHub Release, and Maven Central publishing will happen automatically',
+              '4. 🤖 After merge: Git tag and GitHub Release **draft** will be created automatically',
+              '5. 👤 **Manual step required**: Go to [Releases page](https://github.com/${context.repo.owner}/${context.repo.repo}/releases) and publish the draft release',
+              '6. 🤖 After publishing: Maven Central publishing will happen automatically',
               '',
               '## ⚠️ Important',
-              `Do not delete the \`release/v${version}\` branch until publishing is complete.`
+              `The release process is **not complete** until you manually publish the GitHub Release draft.`
             ].join('\n');
             
             const { data: pr } = await github.rest.pulls.create({
