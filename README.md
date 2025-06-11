@@ -41,7 +41,7 @@ dependencies {
 ### Basic Usage
 
 ```kotlin
-import com.github.haradakunihiko.phpserialize.PhpToJson
+import io.github.haradakunihiko.php_json_deserializer.PhpToJson
 
 // Simple conversion
 val json = PhpToJson.convert("i:123;")
@@ -61,8 +61,8 @@ println(prettyJson)
 The library supports advanced configuration through `ConversionOptions` :
 
 ```kotlin
-import com.github.haradakunihiko.phpserialize.PhpToJson
-import com.github.haradakunihiko.phpserialize.ConversionOptions
+import io.github.haradakunihiko.php_json_deserializer.PhpToJson
+import io.github.haradakunihiko.php_json_deserializer.ConversionOptions
 
 // Disable class names
 val noClassJson = PhpToJson(ConversionOptions {
@@ -197,7 +197,7 @@ Supports PHP reference functionality:
 ## 🏗️ Architecture
 
 ```
-src/main/kotlin/com/github/haradakunihiko/phpserialize/
+src/main/kotlin/io/github/haradakunihiko/php_json_deserializer/
 ├── PhpToJson.kt                    # Main conversion class
 ├── ConversionOptions.kt            # Configuration options and DSL
 └── exceptions/

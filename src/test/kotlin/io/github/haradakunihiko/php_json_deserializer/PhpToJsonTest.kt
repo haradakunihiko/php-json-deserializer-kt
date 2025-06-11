@@ -1,6 +1,6 @@
-package com.github.haradakunihiko.phpserialize
+package io.github.haradakunihiko.php_json_deserializer
 
-import com.github.haradakunihiko.phpserialize.exceptions.PhpSerializeException
+import io.github.haradakunihiko.php_json_deserializer.exceptions.PhpSerializeException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
