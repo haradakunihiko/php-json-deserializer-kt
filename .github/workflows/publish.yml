@@ -1,36 +1,32 @@
-name: Publish Release
+name: Publish to Maven Central
 
 on:
-  pull_request:
-    types: [closed]
-    branches: [main]
+  release:
+    types: [published]
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 jobs:
   publish:
-    # Only run if the PR was merged and it's a release PR
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event.release.tag_name }}
           fetch-depth: 0
           
-      - name: Extract version from branch name
+      - name: Extract version from tag
         id: version
         run: |
-          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
-          TAG=${BRANCH_NAME#release/}
+          TAG="${{ github.event.release.tag_name }}"
           VERSION=${TAG#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Found release: $TAG (version: $VERSION)"
+          echo "Publishing release: $TAG (version: $VERSION)"
           
       - name: Set up JDK 11
         uses: actions/setup-java@v4
@@ -46,28 +42,20 @@ jobs:
           EXPECTED_VERSION="${{ steps.version.outputs.version }}"
           ACTUAL_VERSION=$(grep 'version = ' build.gradle.kts | sed 's/.*version = "\(.*\)".*/\1/')
           echo "Expected version: $EXPECTED_VERSION"
-          echo "Actual version: $ACTUAL_VERSION"
+          echo "Actual version in build.gradle.kts: $ACTUAL_VERSION"
           
           if [ "$ACTUAL_VERSION" != "$EXPECTED_VERSION" ]; then
             echo "❌ Version mismatch! Expected $EXPECTED_VERSION but found $ACTUAL_VERSION"
+            echo "This might indicate that the release was created from the wrong commit."
             exit 1
           fi
           echo "✅ Version verified: $ACTUAL_VERSION"
           
       - name: Run tests
-        run: ./gradlew test
-        
-      - name: Create GitHub Release with auto-generated notes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          echo "Creating GitHub release for $TAG"
-          gh release create "$TAG" \
-            --title "Release $TAG" \
-            --generate-notes \
-            --latest
-          echo "✅ GitHub release created successfully"
+          echo "Running tests before publishing..."
+          ./gradlew test
+          echo "✅ All tests passed"
             
       - name: Publish to Maven Central
         env:
@@ -80,24 +68,20 @@ jobs:
           ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
           echo "✅ Published to Maven Central successfully"
           
-      - name: Clean up release branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RELEASE_BRANCH="${{ github.event.pull_request.head.ref }}"
-          echo "Cleaning up release branch: $RELEASE_BRANCH"
-          git push origin --delete "$RELEASE_BRANCH"
-          echo "✅ Release branch deleted"
-          
       - name: Publish Summary
         run: |
-          echo "🎉 Release ${{ steps.version.outputs.tag }} published successfully!"
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          echo "🎉 Release $TAG published to Maven Central successfully!"
           echo ""
           echo "📋 What was completed:"
-          echo "✅ GitHub release created with auto-generated notes"
+          echo "✅ Tests passed"
           echo "✅ Artifact published to Maven Central"
-          echo "✅ Release branch cleaned up"
           echo ""
           echo "🔗 Links:"
-          echo "- GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
-          echo "- Maven Central: https://search.maven.org/artifact/${{ github.repository_owner }}/php-json-deserializer-kt/${{ steps.version.outputs.version }}/jar"
+          echo "- GitHub Release: https://github.com/${{ github.repository }}/releases/tag/$TAG"
+          echo "- Maven Central: https://search.maven.org/artifact/io.github.haradakunihiko/php-json-deserializer-kt/$VERSION/jar"
+          echo ""
+          echo "📦 The artifact should be available on Maven Central within a few minutes."
+          echo "🎊 Release $TAG is now complete!"
