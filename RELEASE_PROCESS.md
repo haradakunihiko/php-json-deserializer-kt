@@ -6,43 +6,35 @@ This document describes the automated release process for the PHP JSON Deseriali
 
 The release process consists of:
 
-1. **Local script** (`scripts/release.sh`) - Validation and tag creation
-2. **GitHub Actions** (`.github/workflows/release.yml`) - Automated release workflow
+1. **Manual trigger** (GitHub Actions Web UI) - Start release workflow
+2. **GitHub Actions workflows** - Automated release, tagging, and publishing
 
 ## How to Release
 
-### 1. Prepare for Release
+### 1. Start Release (GitHub Web UI)
 
-Ensure you're on the main branch with a clean working directory:
+1. **Navigate to GitHub Actions**
+   - Go to the repository on GitHub
+   - Click on the "Actions" tab
+   - Select "Start Release" workflow
 
-```bash
-git checkout main
-git pull origin main
-git status  # Should be clean
-```
+2. **Run the workflow**
+   - Click "Run workflow"
+   - Enter the release version (e.g., `1.3.0`)
+   - Click "Run workflow" button
 
-### 2. Run the Release Script
+### 2. Automated PR Creation
 
-```bash
-./scripts/release.sh 1.2.1
-```
+The "Start Release" workflow automatically:
 
-This script will:
-- Validate preconditions (clean working directory, on main branch, etc.)
-- Run tests to ensure everything works
-- Create and push a version tag (e.g., `v1.2.1`)
-- Trigger the GitHub Actions workflow
+1. **Validates version format** (x.y.z)
+2. **Checks if version already exists**
+3. **Creates release branch** (`release/v1.3.0`)
+4. **Updates version** in `build.gradle.kts`
+5. **Runs tests** to ensure quality
+6. **Creates a Pull Request** with the version update
 
-### 3. Automated PR Creation
-
-Once the tag is pushed, GitHub Actions automatically:
-
-1. **Creates a release branch** (`release/v1.2.1`)
-2. **Updates version** in `build.gradle.kts`
-3. **Runs tests** to ensure quality
-4. **Creates a Pull Request** with the version update
-
-### 4. Manual Review and Merge
+### 3. Manual Review and Merge
 
 After the automated PR is created:
 
@@ -50,13 +42,29 @@ After the automated PR is created:
 2. **Verify CI checks pass** - Ensure all tests and quality checks succeed
 3. **Manually merge the PR** - Use GitHub's web interface to merge when ready
 
-### 5. Automated Publishing
+### 4. Automated Tag and Release Draft Creation
 
-Once the PR is merged, GitHub Actions automatically:
+Once the PR is merged, the "Release" workflow automatically:
 
-1. **Creates a GitHub Release** with auto-generated release notes
-2. **Publishes to Maven Central**
+1. **Creates Git tag** at the correct merge commit
+2. **Creates GitHub Release draft** with auto-generated release notes
 3. **Cleans up the release branch**
+
+### 5. Manual Release Review and Publishing
+
+After the release draft is created:
+
+1. **Review the release draft** - Go to GitHub Releases page
+2. **Edit release notes** if needed (optional)
+3. **Publish the release** manually when ready
+
+### 6. Automated Maven Central Publishing
+
+Once the GitHub Release is published, the "Publish to Maven Central" workflow automatically:
+
+1. **Runs tests** to ensure quality
+2. **Publishes to Maven Central**
+3. **Provides completion summary**
 
 ## Required Secrets Configuration
 
@@ -128,10 +136,30 @@ If the automated process fails partway through:
 
 1. **Check the failed step** in GitHub Actions logs
 2. **Fix the underlying issue** (missing secrets, etc.)
-3. **Re-run the workflow** from the Actions tab, or
-4. **Push the tag again** after fixing the issue:
-   ```bash
-   git tag -d v1.2.1  # Delete local tag
-   git push origin :v1.2.1  # Delete remote tag
-   ./scripts/release.sh 1.2.1  # Try again
-   ```
+3. **Re-run the workflow** from the Actions tab
+
+**If release PR creation failed:**
+- Re-run the "Start Release" workflow with the same version
+- The workflow will detect and handle existing branches appropriately
+
+**If tag/release creation failed:**
+- Check if the PR was merged successfully
+- Re-run the "Release" workflow manually if needed
+
+**If Maven Central publishing failed:**
+- Check the GitHub release was created successfully
+- Re-run the "Publish to Maven Central" workflow manually
+- Verify all required secrets are configured correctly
+
+**Emergency cleanup:**
+If you need to completely restart a release:
+```bash
+# Delete the release branch if it exists
+git push origin --delete release/v1.3.0
+
+# Delete the tag if it was created
+git tag -d v1.3.0
+git push origin :v1.3.0
+
+# Then restart the release process from GitHub Actions
+```

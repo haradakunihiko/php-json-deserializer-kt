@@ -1,0 +1,142 @@
+name: Start Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.3.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+          
+      - name: Validate version format
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: x.y.z (e.g., 1.3.0)"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+          
+      - name: Check if version already exists
+        run: |
+          VERSION="${{ inputs.version }}"
+          if git tag | grep -q "^v$VERSION$"; then
+            echo "❌ Tag v$VERSION already exists"
+            exit 1
+          fi
+          echo "✅ Version v$VERSION is available"
+          
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        
+      - name: Create release branch
+        run: |
+          VERSION="${{ inputs.version }}"
+          BRANCH_NAME="release/v$VERSION"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          echo "Creating release branch: $BRANCH_NAME"
+          git checkout -b "$BRANCH_NAME"
+          
+      - name: Update version in build.gradle.kts
+        run: |
+          VERSION="${{ inputs.version }}"
+          echo "Updating version to: $VERSION"
+          sed -i "s/version = \".*\"/version = \"$VERSION\"/" build.gradle.kts
+          
+          # Verify the change
+          UPDATED_VERSION=$(grep 'version = ' build.gradle.kts | sed 's/.*version = "\(.*\)".*/\1/')
+          echo "Updated version in build.gradle.kts: $UPDATED_VERSION"
+          
+          if [ "$UPDATED_VERSION" != "$VERSION" ]; then
+            echo "❌ Version update failed!"
+            exit 1
+          fi
+          echo "✅ Version updated successfully"
+          
+      - name: Run tests
+        run: |
+          echo "Running tests to ensure quality..."
+          ./gradlew test
+          echo "✅ All tests passed"
+        
+      - name: Commit version change
+        run: |
+          VERSION="${{ inputs.version }}"
+          BRANCH_NAME="release/v$VERSION"
+          
+          git add build.gradle.kts
+          git commit -m "Release version $VERSION"
+          git push origin "$BRANCH_NAME"
+          echo "✅ Release branch pushed to origin"
+          
+      - name: Create Pull Request
+        uses: actions/github-script@v7
+        id: create_pr
+        with:
+          script: |
+            const version = '${{ inputs.version }}';
+            const prBody = [
+              `🚀 **Release ${version}**`,
+              '',
+              'This is an automated release PR created by the Start Release workflow.',
+              '',
+              '## Changes',
+              `- Updated version in \`build.gradle.kts\` to \`${version}\``,
+              '',
+              '## Next Steps',
+              '1. ✅ Review the version change',
+              '2. ✅ Ensure all CI checks pass',
+              '3. ✅ Merge this PR when ready',
+              '4. 🤖 Tag, GitHub Release, and Maven Central publishing will happen automatically',
+              '',
+              '## ⚠️ Important',
+              `Do not delete the \`release/v${version}\` branch until publishing is complete.`
+            ].join('\n');
+            
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Release version ${version}`,
+              body: prBody,
+              head: `release/v${version}`,
+              base: 'main'
+            });
+            
+            console.log(`Created PR #${pr.number}: ${pr.html_url}`);
+            core.setOutput('pr_number', pr.number);
+            core.setOutput('pr_url', pr.html_url);
+            return pr.number;
+          
+      - name: Release PR Created Successfully
+        run: |
+          VERSION="${{ inputs.version }}"
+          PR_NUMBER="${{ steps.create_pr.outputs.pr_number }}"
+          PR_URL="${{ steps.create_pr.outputs.pr_url }}"
+          
+          echo "✅ Release PR #$PR_NUMBER created for version $VERSION"
+          echo "🔗 $PR_URL"
