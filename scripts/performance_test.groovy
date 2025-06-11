@@ -1,5 +1,5 @@
 @Grab('io.github.haradakunihiko:php-json-deserializer-kt:1.0.0')
-import com.github.haradakunihiko.phpserialize.PhpToJson
+import io.github.haradakunihiko.php_json_deserializer.PhpToJson
 
 // テスト用データ
 def testData = 's:11:"Hello World";'

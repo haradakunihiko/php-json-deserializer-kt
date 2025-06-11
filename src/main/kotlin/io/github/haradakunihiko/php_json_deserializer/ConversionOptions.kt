@@ -1,4 +1,4 @@
-package com.github.haradakunihiko.phpserialize
+package io.github.haradakunihiko.php_json_deserializer
 
 /**
  * Configuration options for PHP to JSON conversion

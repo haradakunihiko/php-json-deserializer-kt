@@ -1,4 +1,4 @@
-package com.github.haradakunihiko.phpserialize.exceptions
+package io.github.haradakunihiko.php_json_deserializer.exceptions
 
 /**
  * Exception thrown during PHP serialization processing

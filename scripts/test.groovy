@@ -1,5 +1,5 @@
-@Grab('io.github.haradakunihiko:php-json-deserializer-kt:1.2.0')
-import com.github.haradakunihiko.phpserialize.PhpToJson
+@Grab('io.github.haradakunihiko:php-json-deserializer-kt:1.3.0')
+import io.github.haradakunihiko.php_json_deserializer.PhpToJson
 
 println "PhpToJson library test with prettyPrint:"
 println "========================================"
