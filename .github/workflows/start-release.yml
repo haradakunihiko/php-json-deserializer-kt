@@ -94,6 +94,28 @@ jobs:
           git push origin "$BRANCH_NAME"
           echo "✅ Release branch pushed to origin"
           
+      - name: Debug - Check Authentication
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const { data: user } = await github.rest.users.getAuthenticated();
+              console.log('🔍 Authentication Info:');
+              console.log('- User:', user.login);
+              console.log('- User Type:', user.type);
+              console.log('- User ID:', user.id);
+              
+              // Check if this is the repo owner
+              const { data: repo } = await github.rest.repos.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+              console.log('- Repo Owner:', repo.owner.login);
+              console.log('- Is Owner?', user.login === repo.owner.login);
+            } catch (error) {
+              console.log('❌ Authentication failed:', error.message);
+            }
+
       - name: Create Pull Request
         uses: actions/github-script@v7
         id: create_pr
